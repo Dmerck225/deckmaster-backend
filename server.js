@@ -3,7 +3,7 @@ const cors = require("cors");
 const app = express();
 app.use(cors());
 app.use(express.static("public"));
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 
 // Sample data
 let cards = [
