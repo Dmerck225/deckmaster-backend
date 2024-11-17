@@ -1,14 +1,41 @@
 const express = require("express");
 const cors = require("cors");
+const mongoose = require("mongoose");
+
 const app = express();
-app.use(cors());
-app.use(express.static("public"));
 const PORT = process.env.PORT || 3000;
 
-// Sample data
-let cards = [
-    {
-        _id: 1,
+// Middleware
+app.use(cors());
+app.use(express.static("public")); // Serve static files (e.g., images)
+app.use(express.json()); // Parse JSON payloads
+
+// MongoDB Connection
+mongoose
+  .connect("mongodb://localhost:27017/cardgame", { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => console.log("Connected to MongoDB..."))
+  .catch((err) => console.error("Could not connect to MongoDB...", err));
+
+// Mongoose Schema and Model
+const cardSchema = new mongoose.Schema({
+  name: String,
+  cardType: String,
+  rarity: String,
+  description: String,
+  attack: Number,
+  defense: Number,
+  abilities: [String],
+  img_name: String,
+});
+
+const Card = mongoose.model("Card", cardSchema);
+
+// Seed Data Function (Run Once to Populate Database)
+async function seedCards() {
+  const count = await Card.countDocuments();
+  if (count === 0) {
+    const cards = [
+      {
         name: "Shadow Assassin",
         cardType: "Creature",
         rarity: "Rare",
@@ -19,10 +46,9 @@ let cards = [
           "Stealth Strike: Shadow Assassin can attack directly, bypassing defenses, once per turn.",
           "Evasive Maneuver: Shadow Assassin has a 50% chance to completely avoid incoming attacks."
         ],
-        img_name: "images/shadow-assasin.jpeg"
+        img_name: "images/shadow-assasin.jpeg",
       },
       {
-        _id: 2,
         name: "Thunder Golem",
         cardType: "Creature",
         rarity: "Legendary",
@@ -31,12 +57,11 @@ let cards = [
         defense: 200,
         abilities: [
           "ThunderStorm Blast:  Upon entering the battlefield, Thunder Golem deals 30 damage to all enemy creatures.",
-          "Electric Shield: Reduces incoming damage by 20% from all sources. This move reflects the golem's natural defense, absorbing and dispersing energy from attacks."
+          "Electric Shield: Reduces incoming damage by 20% from all sources.",
         ],
-        img_name: "images/thunder-golem.jpeg"
+        img_name: "images/thunder-golem.jpeg",
       },
       {
-        _id: 3,
         name: "Crimson Knight",
         cardType: "Creature",
         rarity: "Epic",
@@ -45,12 +70,11 @@ let cards = [
         defense: 180,
         abilities: [
           "Blood Frenzy: Gains +10 attack every time it destroys a creature.",
-          "Crimson Shield: Reduces damage from melee attacks by 25%."
+          "Crimson Shield: Reduces damage from melee attacks by 25%.",
         ],
-        img_name: "images/crimson-khight.jpeg"
+        img_name: "images/crimson-khight.jpeg",
       },
       {
-        _id: 4,
         name: "Void Walker",
         cardType: "Creature",
         rarity: "Epic",
@@ -59,12 +83,11 @@ let cards = [
         defense: 150,
         abilities: [
           "Void Shift: Can teleport out of combat, avoiding one attack per game.",
-          "Soul Drain: Drains 30 health from an enemy creature, healing Void Walker by the same amount."
+          "Soul Drain: Drains 30 health from an enemy creature, healing Void Walker by the same amount.",
         ],
-        img_name: "images/void-walker.jpeg"
+        img_name: "images/void-walker.jpeg",
       },
       {
-        _id: 5,
         name: "Ice Queen",
         cardType: "Creature",
         rarity: "Legendary",
@@ -73,12 +96,11 @@ let cards = [
         defense: 220,
         abilities: [
           "Frozen Touch: Freezes an enemy creature, preventing it from attacking for one turn.",
-          "Blizzard Call: Deals 40 damage to all enemies and reduces their attack by 10 for two turns."
+          "Blizzard Call: Deals 40 damage to all enemies and reduces their attack by 10 for two turns.",
         ],
-        img_name: "images/ice-queen.jpeg"
+        img_name: "images/ice-queen.jpeg",
       },
       {
-        _id: 6,
         name: "Storm Elemental",
         cardType: "Creature",
         rarity: "Rare",
@@ -87,53 +109,35 @@ let cards = [
         defense: 130,
         abilities: [
           "Gale Force: Pushes an enemy back, delaying its attack by one turn.",
-          "Storm Field: Creates a storm for 3 turns, reducing all enemy defense by 10%."
+          "Storm Field: Creates a storm for 3 turns, reducing all enemy defense by 10%.",
         ],
-        img_name: "images/storm-elemental.jpeg"
+        img_name: "images/storm-elemental.jpeg",
       },
-      {
-        _id: 7,
-        name: "Necromancer",
-        cardType: "Creature",
-        rarity: "Epic",
-        description: "A master of dark magic, the Necromancer can manipulate life and death, raising fallen allies and draining the life force of enemies.",
-        attack: 160,
-        defense: 140,
-        abilities: [
-          "Raise Dead: Revives one fallen ally creature with 50% health.",
-          "Dark Pact: Sacrifices 50 health to deal 100 damage to an enemy."
-        ],
-        img_name: "images/Necromancer.jpeg"
-      },
-      {
-        _id: 8,
-        name: "Phoenix Guardian",
-        cardType: "Creature",
-        rarity: "Legendary",
-        description: "The immortal Phoenix Guardian rises from the ashes, bringing fiery destruction to all who oppose it.",
-        attack: 240,
-        defense: 180,
-        abilities: [
-          "Rebirth: Once per game, resurrects after being destroyed with half health.",
-          "Flame Wings: Deals 50 damage to an enemy and burns them for 10 damage over time."
-        ],
-        img_name: "images/phoenix.jpeg"
-      }
-];
+    ];
 
-// Middleware to parse JSON
-app.use(express.json());
+    await Card.insertMany(cards);
+    console.log("Cards seeded successfully.");
+  }
+}
+
+// Uncomment to seed the database (Run once, then comment it out again)
+// seedCards();
 
 // Routes
 app.get("/", (req, res) => {
-    res.sendFile(__dirname + "/index.html");
-  });
-
-app.get("/api/cards", (req, res) => {
-    res.json(cards);
+  res.sendFile(__dirname + "/index.html");
 });
 
-// Start the server
+app.get("/api/cards", async (req, res) => {
+  try {
+    const cards = await Card.find(); // Fetch all cards from MongoDB
+    res.json(cards);
+  } catch (err) {
+    res.status(500).send("Error retrieving cards");
+  }
+});
+
+// Start the Server
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });
