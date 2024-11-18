@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
+const Joi = require("joi");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -12,7 +13,7 @@ app.use(express.json()); // Parse JSON payloads
 
 // MongoDB Connection
 mongoose
-  .connect("mongodb://localhost:27017/cardgame", { useNewUrlParser: true, useUnifiedTopology: true })
+  .connect("mongodb+srv://heavymentaldlm:xmM6KldMyMVmhcHz@carddata.bzqqr.mongodb.net/?retryWrites=true&w=majority&appName=CardData", { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log("Connected to MongoDB..."))
   .catch((err) => console.error("Could not connect to MongoDB...", err));
 
@@ -29,6 +30,18 @@ const cardSchema = new mongoose.Schema({
 });
 
 const Card = mongoose.model("Card", cardSchema);
+
+// Joi Validation Schema
+const cardValidationSchema = Joi.object({
+  name: Joi.string().min(3).max(50).required(),
+  cardType: Joi.string().valid("Creature", "Spell", "Artifact").required(),
+  rarity: Joi.string().valid("Common", "Rare", "Epic", "Legendary").required(),
+  description: Joi.string().max(500).required(),
+  attack: Joi.number().integer().min(0).required(),
+  defense: Joi.number().integer().min(0).required(),
+  abilities: Joi.array().items(Joi.string()).required(),
+  img_name: Joi.string().uri().required(),
+});
 
 // Seed Data Function (Run Once to Populate Database)
 async function seedCards() {
@@ -113,13 +126,37 @@ async function seedCards() {
         ],
         img_name: "images/storm-elemental.jpeg",
       },
+      {
+        name: "Necromancer",
+        cardType: "Creature",
+        rarity: "Rare",
+        description: "A master of the dark arts, the Necromancer harnesses the power of death to manipulate the undead.",
+        attack: 180,
+        defense: 180,
+        abilities: [
+          "Raise Dead: Revives one fallen ally creature with 50% health.",
+          "Dark Pact: Sacrifices 50 health to deal 100 damage to an enemy."
+        ],
+        img_name: "images/Necromancer.jpeg",
+      },
+      {
+        name: "Phoenix Guardian",
+        cardType: "Creature",
+        rarity: "Legendary",
+        description: "A celestial guardian, the Phoenix Guardian harnesses the power of fire to protect its allies.",
+        attack: 190,
+        defense: 170,
+        abilities: [
+          "Rebirth: Once per game, resurrects after being destroyed with half health.",
+          "Flame Wings: Deals 50 damage to an enemy and burns them for 10 damage over time."
+        ],
+        img_name: "images/phoenix.jpeg",
+      }
     ];
-
     await Card.insertMany(cards);
     console.log("Cards seeded successfully.");
   }
 }
-
 // Uncomment to seed the database (Run once, then comment it out again)
 // seedCards();
 
@@ -128,12 +165,29 @@ app.get("/", (req, res) => {
   res.sendFile(__dirname + "/index.html");
 });
 
+// GET: Fetch all cards
 app.get("/api/cards", async (req, res) => {
   try {
     const cards = await Card.find(); // Fetch all cards from MongoDB
     res.json(cards);
   } catch (err) {
     res.status(500).send("Error retrieving cards");
+  }
+});
+
+// POST: Add a new card
+app.post("/api/cards", async (req, res) => {
+  // Validate the incoming data
+  const { error } = cardValidationSchema.validate(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
+
+  try {
+    // Create a new card and save it to MongoDB
+    const newCard = new Card(req.body);
+    const savedCard = await newCard.save();
+    res.status(201).json(savedCard); // Return the created card
+  } catch (err) {
+    res.status(500).send("Failed to add the card");
   }
 });
 
