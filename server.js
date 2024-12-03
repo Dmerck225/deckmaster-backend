@@ -5,14 +5,13 @@ const Joi = require("joi");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
 app.use(cors());
-app.use(express.static("public")); // Serve static files (e.g., images)
-app.use(express.json()); // Parse JSON payloads
+app.use(express.static("public"));
+app.use(express.json());
 
-// In-memory card data (Array)
 let cards = [
   {
+    _id: 1,
     name: "Shadow Assassin",
     cardType: "Creature",
     rarity: "Rare",
@@ -26,6 +25,7 @@ let cards = [
     img_name: "images/shadow-assasin.jpeg",
   },
   {
+    _id: 2,
     name: "Thunder Golem",
     cardType: "Creature",
     rarity: "Legendary",
@@ -39,6 +39,7 @@ let cards = [
     img_name: "images/thunder-golem.jpeg",
   },
   {
+    _id: 3,
     name: "Crimson Knight",
     cardType: "Creature",
     rarity: "Epic",
@@ -52,6 +53,7 @@ let cards = [
     img_name: "images/crimson-khight.jpeg",
   },
   {
+    _id: 4,
     name: "Void Walker",
     cardType: "Creature",
     rarity: "Epic",
@@ -65,6 +67,7 @@ let cards = [
     img_name: "images/void-walker.jpeg",
   },
   {
+    _id: 5,
     name: "Ice Queen",
     cardType: "Creature",
     rarity: "Legendary",
@@ -78,6 +81,7 @@ let cards = [
     img_name: "images/ice-queen.jpeg",
   },
   {
+    _id: 6,
     name: "Storm Elemental",
     cardType: "Creature",
     rarity: "Rare",
@@ -91,6 +95,7 @@ let cards = [
     img_name: "images/storm-elemental.jpeg",
   },
   {
+    _id: 7,
     name: "Necromancer",
     cardType: "Creature",
     rarity: "Rare",
@@ -104,6 +109,7 @@ let cards = [
     img_name: "images/Necromancer.jpeg",
   },
   {
+    _id: 8,
     name: "Phoenix Guardian",
     cardType: "Creature",
     rarity: "Legendary",
@@ -118,7 +124,6 @@ let cards = [
   }
 ];
 
-// Joi Validation Schema
 const cardValidationSchema = Joi.object({
   name: Joi.string().min(3).max(50).required(),
   cardType: Joi.string().valid("Creature", "Spell", "Artifact").required(),
@@ -130,14 +135,13 @@ const cardValidationSchema = Joi.object({
   img_name: Joi.string().uri().required(),
 });
 
-// Routes
 app.get("/", (req, res) => {
   res.sendFile(__dirname + "/index.html");
 });
 
 // GET: Fetch all cards
 app.get("/api/cards", (req, res) => {
-  res.json(cards); // Send the cards array as response
+  res.json(cards);
 });
 
 // POST: Add a new card
@@ -147,10 +151,41 @@ app.post("/api/cards", (req, res) => {
   if (error) return res.status(400).send(error.details[0].message);
 
   // Add the new card to the in-memory array
-  const newCard = req.body;
+  const newCard = {
+    id: cards.length + 1, // Automatically increment ID for the new card
+    ...req.body
+  };
   cards.push(newCard);
 
   res.status(201).json(newCard); // Return the created card
+});
+
+// PUT: Update a card
+app.put("/api/cards/_id", (req, res) => {
+  const cardId = parseInt(req.params.id); // Make sure cardId is an integer
+  const cardIndex = cards.findIndex(card => card.id === cardId);
+
+  if (cardIndex === -1) return res.status(404).send("Card not found");   
+
+
+  // Validate the incoming data
+  const { error } = cardValidationSchema.validate(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
+
+  // Update the card
+  cards[cardIndex] = { id: cardId, ...req.body };
+  res.json(cards[cardIndex]);
+});
+
+// DELETE: Delete a card
+app.delete("/api/cards/_id", (req, res) => {
+  const cardId = parseInt(req.params.id); // Make sure cardId is an integer
+  const cardIndex = cards.findIndex(card => card.id === cardId);
+
+  if (cardIndex === -1) return res.status(404).send("Card not found");
+
+  cards.splice(cardIndex, 1);
+  res.status(204).send(); // Successfully deleted
 });
 
 // Start the Server
