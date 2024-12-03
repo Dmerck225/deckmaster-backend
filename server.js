@@ -161,25 +161,24 @@ app.post("/api/cards", (req, res) => {
 });
 
 // PUT: Update a card
-app.put("/api/cards/_id", (req, res) => {
-  const cardId = parseInt(req.params._id); // Make sure cardId is an integer
+app.put("/api/cards/:_id", (req, res) => {
+  const cardId = parseInt(req.params._id); // Use params to get cardId
   const cardIndex = cards.findIndex(card => card._id === cardId);
 
-  if (cardIndex === -1) return res.status(404).send("Card not found");   
-
+  if (cardIndex === -1) return res.status(404).send("Card not found");
 
   // Validate the incoming data
   const { error } = cardValidationSchema.validate(req.body);
   if (error) return res.status(400).send(error.details[0].message);
 
   // Update the card
-  cards[cardIndex] = { id: cardId, ...req.body };
-  res.json(cards[cardIndex]);
+  cards[cardIndex] = { _id: cardId, ...req.body };
+  res.json(cards[cardIndex]); // Return updated card
 });
 
 // DELETE: Delete a card
-app.delete("/api/cards/_id", (req, res) => {
-  const cardId = parseInt(req.params.id); // Make sure cardId is an integer
+app.delete("/api/cards/:_id", (req, res) => {
+  const cardId = parseInt(req.params._id); // Use params to get cardId
   const cardIndex = cards.findIndex(card => card._id === cardId);
 
   if (cardIndex === -1) return res.status(404).send("Card not found");
