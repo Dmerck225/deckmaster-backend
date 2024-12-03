@@ -162,8 +162,8 @@ app.post("/api/cards", (req, res) => {
 
 // PUT: Update a card
 app.put("/api/cards/_id", (req, res) => {
-  const cardId = parseInt(req.params.id); // Make sure cardId is an integer
-  const cardIndex = cards.findIndex(card => card.id === cardId);
+  const cardId = parseInt(req.params._id); // Make sure cardId is an integer
+  const cardIndex = cards.findIndex(card => card._id === cardId);
 
   if (cardIndex === -1) return res.status(404).send("Card not found");   
 
@@ -180,7 +180,7 @@ app.put("/api/cards/_id", (req, res) => {
 // DELETE: Delete a card
 app.delete("/api/cards/_id", (req, res) => {
   const cardId = parseInt(req.params.id); // Make sure cardId is an integer
-  const cardIndex = cards.findIndex(card => card.id === cardId);
+  const cardIndex = cards.findIndex(card => card._id === cardId);
 
   if (cardIndex === -1) return res.status(404).send("Card not found");
 
