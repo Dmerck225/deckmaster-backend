@@ -2,15 +2,12 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 const bodyParser = require("body-parser");
-const { v4: uuidv4 } = require("uuid");  // Importing uuid for generating unique IDs
+const { v4: uuidv4 } = require("uuid");  
 
-// Enable Cross-Origin Request Sharing (CORS)
 app.use(cors());
 
-// Middleware to parse JSON request bodies
 app.use(bodyParser.json());
 
-// In-memory "database" for cards
 let cards = [
     {
         _id: "1", 
@@ -120,18 +117,15 @@ let cards = [
     }
 ];
 
-// Get all cards
 app.get("/api/cards", (req, res) => {
     res.json(cards);
 });
 
-// Add a new card
 app.post("/api/cards", (req, res) => {
     const { name, cardType, rarity, description, attack, defense, abilities, img_name } = req.body;
 
-    // Generate a unique ID for the new card
     const newCard = {
-        _id: uuidv4(),  // Use uuid to generate a truly unique ID
+        _id: uuidv4(),  
         name,
         cardType,
         rarity,
@@ -142,11 +136,10 @@ app.post("/api/cards", (req, res) => {
         img_name
     };
 
-    cards.push(newCard);  // Add the new card to the "database"
-    res.status(201).json(newCard);  // Respond with the new card, including the generated _id
+    cards.push(newCard);  
+    res.status(201).json(newCard);  
 });
 
-// Edit an existing card
 app.put("/api/cards/:id", (req, res) => {
     const cardId = req.params.id;
     const { name, cardType, rarity, description, attack, defense, abilities, img_name } = req.body;
@@ -156,7 +149,6 @@ app.put("/api/cards/:id", (req, res) => {
         return res.status(404).send("Card not found");
     }
 
-    // Update the card's properties
     card.name = name || card.name;
     card.cardType = cardType || card.cardType;
     card.rarity = rarity || card.rarity;
@@ -166,10 +158,9 @@ app.put("/api/cards/:id", (req, res) => {
     card.abilities = abilities || card.abilities;
     card.img_name = img_name || card.img_name;
 
-    res.json(card);  // Respond with the updated card
+    res.json(card);  
 });
 
-// Delete a card
 app.delete("/api/cards/:id", (req, res) => {
     const cardId = req.params.id;
     const cardIndex = cards.findIndex(card => card._id === cardId);
@@ -178,11 +169,10 @@ app.delete("/api/cards/:id", (req, res) => {
         return res.status(404).send("Card not found");
     }
 
-    cards.splice(cardIndex, 1);  // Remove the card from the "database"
+    cards.splice(cardIndex, 1);  
     res.status(200).send("Card deleted successfully");
 });
 
-// Set up the server to listen on port 3000 (or your desired port)
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
